@@ -35,7 +35,7 @@ classdef UtilEngine < handle
     %% Public methods
     methods (Access = public)
 
-        function obj = UtilEngine(action_items, input)
+        function obj = UtilEngine(opts)
             % ==================================================================
             %  Constructor
             % ==================================================================
@@ -43,16 +43,16 @@ classdef UtilEngine < handle
 
                 % Actions_items are the list of input actions the system
                 % will perform, these come in the form of common.OpaqueBox
-                action_items (1, :) common.OpaqueBox;
+                opts.action_items (1, :) common.OpaqueBox;
 
                 % Input is the input variable that maybe required by the
                 % action_items to perform their tasks
-                input (1, :) struct = [];
+                opts.input (1, :) struct = [];
 
             end % arguments
 
-            obj.action_items = action_items;
-            obj.input = input;
+            obj.action_items = opts.action_items;
+            obj.input = opts.input;
 
         end % function
         

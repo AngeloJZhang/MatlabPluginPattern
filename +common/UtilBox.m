@@ -17,7 +17,7 @@ classdef UtilBox < common.UtilEngine & common.OpaqueBox
     %% Public methods
     methods (Access = public)
 
-        function obj = UtilBox(action_items, input)
+        function obj = UtilBox(opts)
             % ==================================================================
             %  Constructor
             % ==================================================================
@@ -25,11 +25,11 @@ classdef UtilBox < common.UtilEngine & common.OpaqueBox
 
                 % Actions_items are the list of input actions the system
                 % will perform, these come in the form of common.OpaqueBox
-                action_items (1, :) common.OpaqueBox;
+                opts.action_items (1, :) common.OpaqueBox;
 
                 % Input is the input variable that maybe required by the
                 % action_items to perform their tasks
-                input (1, :) struct = [];
+                opts.input (1, :) struct = [];
 
             end % arguments
 

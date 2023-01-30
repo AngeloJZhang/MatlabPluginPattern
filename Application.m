@@ -3,4 +3,14 @@
 %  classes from the configuration to run the app
 % ==============================================================================
 classdef Application < handle
+    methods(Access = public)
+        function obj = Application(path_to_config)
+            
+            [imports, functions] = core.ConfigLoader.load(path_to_config);
+            importer = core.Importer(ref_struct=imports);
+
+        end % function
+
+    end % methods
+
 end % classdef

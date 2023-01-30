@@ -11,8 +11,18 @@ classdef ConfigLoader < handle
     %  before the JSONs are load in there is a file reader that parses out
     %  the symbol '#' so that it can be used as line comments.
     % ==========================================================================
+
+    % Constant Variables
+    properties (Constant)
+
+        % The following variable contains required fields for the
+        % configuration that is loaded.
+        REQUIRED_FIELDS = ["imports", "functions"]
+
+    end % properties
+
     methods (Static)
-        function config = load(path_to_config)
+        function [imports, functions] = load(path_to_config)
             % ==================================================================
             %  This function is static and loads in the config. It is a class
             %  because while there is likely no need for multiple configuraitons.
@@ -36,9 +46,23 @@ classdef ConfigLoader < handle
             % Reformat the config data from cell array to string array
             config_data = [config_data{:}];
 
+            % JSONs read '\' as an escape character and requires '\\' instead.  
+            config_data = strrep(config_data, "\", "\\");
+
             % Combine everything into a single string and decode
             config = jsondecode(config_data.join(newline));
 
+            % Verify that the two fieldnames exist
+            fields = fieldnames(config);
+
+            if ~all(contains(fields, core.ConfigLoader.REQUIRED_FIELDS))
+                error("Config file does not contain required fields : %s", path_to_config);
+            end % if
+
+            % The following data is parsed in their individual classes
+            imports = config.imports;
+            functions = config.functions;
+            
         end % function
 
     end % methods

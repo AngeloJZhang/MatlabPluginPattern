@@ -115,7 +115,7 @@ classdef Importer < handle
             % This evaluates in the caller the PathGuard and the Import
             % step so that the user can immediately being using their lib
             assignin("caller", ref_key + "_path_guard", pathguard_obj);
-            import_name = ref_key + ".*";
+            import_name = ref_key;
         end % function
 
     end % methods
