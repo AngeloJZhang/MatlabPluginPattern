@@ -1,0 +1,45 @@
+# The following configuration file is a test configuration and acts as a guide
+# for how to create your own configuration. Each of the values here represent
+# a function block that is transfered to the factory to create the correct
+# action in the chain. See the README.md for more details.
+
+# Imports are loaded into lib by default."
+{
+    #
+    # The import field designates a <key, value> such that the key becomes the
+    # reference variables of the lib, and the value is the path to the lib.
+    # This emulates the import pathlib as path structure.
+    #
+    "imports": {
+        "yaml" : "/path/to/yaml",
+        "graphing": "/path/to/graphing"
+    },
+    #
+    # The following function tree shows the order in which function blocks are
+    # run within the application. The top-level function key designates the
+    # function tree.
+    #
+    # The following tree shows the tree:
+    #
+    #   funct1 :
+    #     - subfunct1
+    #     - subfunct2 :
+    #        - subfunct2a
+    #        - subfunct2b
+    #
+    # While, it is possible to continually nest functions it is not recommended
+    # as, it becomes hard to follow. In addition, a major redesign should be
+    # considered if multiple layers of nesting is required.
+    #
+    "functions": {
+        "funct1": [
+            "subfunct1",
+            {
+                "subfunct2": [
+                    "subfunct2a",
+                    "subfunct2b"
+                ]
+            }
+        ]
+    }
+}
