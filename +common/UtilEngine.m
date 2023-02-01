@@ -111,4 +111,27 @@ classdef UtilEngine < handle
 
     end % methods
 
+    methods (Access = protected)
+        function [input_vars, output_vars] = generate_input(obj)
+            % ==================================================================
+            %  The following loops through the internal variable inputs and
+            %  output variables to create the vars so ensure at a high
+            %  level that action list is valid.
+            % ==================================================================
+
+            input_vars = [];
+            output_vars = [];
+
+            for action_item = obj.action_items
+                input_vars = horzcat(input_vars, action_item.input_vars);
+                output_vars = horzcat(output_vars, action_item.output_vars);
+
+                keyboard
+            end
+
+
+        end
+
+    end % methods
+
 end % classdef

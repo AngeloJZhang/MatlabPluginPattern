@@ -13,15 +13,24 @@ classdef OpaqueBox < handle
     %  function is required it can be added.
     % ==========================================================================
 
-    %% Virtual Properties
-    properties (Abstract)
+    %% Required Properties
+    properties (GetAccess = public, SetAccess = protected, AbortSet)
 
         % ======================================================================
         %  Highly Complicated systems will inevitably be linked in some
-        %  fashion. The variable map is used to remap box specific
-        %  variables so that boxes are more manuverable
+        %  fashion. The input variables are used to validate inputs.
+        %  The format of the input variables are <"Name", "ClassType">.
         % ======================================================================
-        variable_map
+        input_vars (2, :) string
+
+        % ======================================================================
+        %  Highly Complicated systems will inevitably be linked in some
+        %  fashion. The output variables are used to validate outputs.
+        %  The format of the output variables are strings of
+        %  <"VariableName", "ClassType">.
+        %  i.e, <"MyNumberField", "double">
+        % ======================================================================
+        output_vars (2, :) string
 
     end % properties
 
@@ -29,20 +38,53 @@ classdef OpaqueBox < handle
     methods (Abstract)
 
         % ======================================================================
-        % Debug is used for plotting, printing verbose, etc.
+        %  Apply is the function that actually applies what is intended to
+        %  the instructions. Run wraps this function to ensure everything
+        %  is validated before we call this function.
+        % ======================================================================
+        work_struct = apply(obj, work_struct)
+
+        % ======================================================================
+        %  Debug is used for plotting, printing verbose, etc.
         % ======================================================================
         debug(obj)
 
-        % ======================================================================
-        % Run is the function that runs the system.
-        % ======================================================================
-        run(obj)
+    end % methods
 
-        % ======================================================================
-        % Validate ensures that box contains necessary components to run the
-        % system. It also allows for the 
-        % ======================================================================
-        validate(obj)
+    %% Public Methods
+    methods (Access = public)
+        function work_struct = run(obj, work_struct)
+            % ==================================================================
+            % Run is the function that runs the system.
+            % ==================================================================
+            obj.validate(work_struct);
+            work_struct = obj.apply(work_struct);
+        end
+
+    end
+
+    %% Inherited Methods
+    methods (Access = protected)
+        function validate(obj, work_struct)
+            % ==================================================================
+            % Validate ensures that box contains necessary components to run
+            % ==================================================================
+
+            diff_fields = setdiff(obj.input_vars(1, :), fieldnames(work_struct));
+
+            if ~isempty(diff_fields)
+                error("Missing Fields in %s: %s", dbstack(1).name, diff_fields)
+            end % if
+
+            for input_var = obj.input_vars
+                if ~isa(work_struct.(input_var(1)), input_var(2))
+                    error("Field %s is not a %s", input_var(1), input_var(2));
+
+                end % if
+
+            end % for
+
+        end % function
 
     end % methods
 

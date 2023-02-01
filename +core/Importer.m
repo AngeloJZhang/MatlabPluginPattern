@@ -48,7 +48,7 @@ classdef Importer < handle
             end % arguments
 
             if isequal(ref_struct, struct())
-                error("Reference Structure much contain a value.")
+                error("Reference Structure much contain a value.");
             end
 
             % Validate that the <key, value> pairs are strings.

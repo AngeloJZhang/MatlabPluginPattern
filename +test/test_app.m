@@ -74,6 +74,20 @@ classdef test_app < matlab.unittest.TestCase
             testCase.verifyTrue(exist(path_to_symlink, "dir") == 0);
 
         end
+
+        function CreateOpaqueBox(testCase)
+            [imports, ~] = core.ConfigLoader.load("+test/test_config.json");
+            importer = core.Importer(imports);
+            import(importer.import("testclass"));
+
+            test_box_one = testOpaqueOne();
+            work_struct = struct();
+            work_struct = test_box_one.run(work_struct);
+
+            test_box_two = testOpaqueTwo();
+            work_struct = test_box_two.run(work_struct);
+
+        end
     end
 
 end

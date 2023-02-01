@@ -7,7 +7,7 @@ classdef Application < handle
         function obj = Application(path_to_config)
             
             [imports, functions] = core.ConfigLoader.load(path_to_config);
-            importer = core.Importer(ref_struct=imports);
+            importer = core.Importer(imports);
 
         end % function
 
