@@ -31,7 +31,8 @@ classdef test_app < matlab.unittest.TestCase
             % Verify the two outputs
             testCase.verifyTrue(isequal(test_imports, imports));
             testCase.verifyTrue(isequal(test_functions, functions));
-        end
+
+        end % function
 
         function ImportPaths(testCase)
             % ==================================================================
@@ -39,7 +40,7 @@ classdef test_app < matlab.unittest.TestCase
             % ==================================================================
             [imports, ~] = core.ConfigLoader.load("+test/test_config.json");
             importer = core.Importer(imports);
-            
+
             % Test Importer Constructor / Test Symlink Dirs Exist
             path_to_symlink = fullfile(importer.IMPORT_SYM_DIR, "testclass");
             testCase.verifyTrue(exist(path_to_symlink, "dir") == 7);
@@ -73,21 +74,75 @@ classdef test_app < matlab.unittest.TestCase
             importer.delete();
             testCase.verifyTrue(exist(path_to_symlink, "dir") == 0);
 
-        end
+        end % function
 
         function CreateOpaqueBox(testCase)
+            % ==================================================================
+            %  This function tests the running of OpaqueBoxes
+            % ==================================================================
             [imports, ~] = core.ConfigLoader.load("+test/test_config.json");
             importer = core.Importer(imports);
             import(importer.import("testclass"));
 
+            % Construct the boxes
             test_box_one = testOpaqueOne();
-            work_struct = struct();
-            work_struct = test_box_one.run(work_struct);
-
             test_box_two = testOpaqueTwo();
-            work_struct = test_box_two.run(work_struct);
 
+            % Create the struct that acts as the workspace
+            test_work_struct = struct();
+
+            % Run the boxes in line
+            test_work_struct = test_box_one.run(test_work_struct);
+            test_work_struct = test_box_two.run(test_work_struct);
+
+            work_struct.testfieldA = 1;
+            work_struct.testfieldB = "test";
+            work_struct.testfieldC = 2;
+
+            % Validate the structures are the same.
+            testCase.assertEqual(test_work_struct, work_struct);
+
+            %% These tests throw an error
+            try
+                % Test what happens if the wrong type is given
+                work_struct.testfieldA = "a";
+                test_box_two(work_struct);
+                testCase.assertFail();
+
+            catch
+                % This means it worked!
+                % Do nothing
+
+            end % try catch
+
+            try
+                % Test what happens if a field does not exist
+                work_struct = rmfield(work_struct, "testfieldA");
+                test_box_two(work_struct);
+                testCase.assertFail();
+            catch
+                % This means it worked!
+                % Do nothing
+
+            end % try catch
+
+        end % function
+
+        function RunUtilEngine(testCase)
+            [imports, ~] = core.ConfigLoader.load("+test/test_config.json");
+            importer = core.Importer(imports);
+            import(importer.import("testclass"));
+
+            % Data Object
+            work_struct = struct();
+
+            % Construct the boxes
+            test_box_one = testOpaqueOne();
+            test_box_two = testOpaqueTwo();
+            engine = common.UtilBox(action_items={test_box_one, test_box_two});
+            engine.run(work_struct)
         end
+
     end
 
 end

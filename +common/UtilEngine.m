@@ -21,14 +21,10 @@ classdef UtilEngine < handle
 
         % ======================================================================
         %  Action_items is the list of actions that the system will perform
+        %  Realistically, this should be a list of class handles however,
+        %  matlab has a very strange way of initializing object arrays.
         % ======================================================================
-        action_items (1, :) common.OpaqueBox = [];
-
-        % ======================================================================
-        %  Input is the input variables that maybe requried by the actions
-        % ======================================================================
-        % TODO : Look into changing this into a class
-        input (1, 1) struct = [];
+        action_items (1, :) cell = [];
 
     end % properties
 
@@ -43,31 +39,38 @@ classdef UtilEngine < handle
 
                 % Actions_items are the list of input actions the system
                 % will perform, these come in the form of common.OpaqueBox
-                opts.action_items (1, :) common.OpaqueBox;
-
-                % Input is the input variable that maybe required by the
-                % action_items to perform their tasks
-                opts.input (1, :) struct = [];
+                opts.action_items (1, :) cell;
 
             end % arguments
 
+            % Validate action_items
+            for item = opts.action_items
+                if ~isa(item{:}, "common.OpaqueBox")
+                    error("Action is not a child of OpaqueBox: %s\n", item{:});
+
+                end % if
+
+            end % for
+
             obj.action_items = opts.action_items;
-            obj.input = opts.input;
 
         end % function
         
-        function output = run(obj)
+        function output = apply(obj, work_struct)
             % ==================================================================
-            %  This is the primary function that is used to run the actions
+            %  This is the primary function that is used to apply the actions
             % ==================================================================
             arguments
 
                 % Base UtilEngine
-                obj (1, 1) UtilEngine;
+                obj (1, 1) common.UtilEngine;
+
+                % Input data
+                work_struct (1, 1) struct;
 
             end % arguments
 
-            input = obj.input;
+            input = work_struct;
 
             % TODO : Figure out how to parfor correctly it maybe that a
             % different class will be required all together for threadable
@@ -76,8 +79,7 @@ classdef UtilEngine < handle
             for action = obj.action_items
 
                 % TODO : place in try catch loop and catch the exception
-                action.validate(input);
-                output = action.run(input);
+                output = action{:}.run(input);
 
                 % This marks the end of an action and the start of the next
                 input = output;
@@ -85,52 +87,6 @@ classdef UtilEngine < handle
             end % for
 
         end % function
-
-        function validate(obj, input)
-            % ==================================================================
-            %  This is the primary function that is used to validate
-            %  inputs. This just becomes the validation function of the
-            %  first item in the action list.
-            % ==================================================================
-            % TODO : Ensure there are no bugs due to this validation
-            % method. There maybe troubles when attempting to thread this.
-            
-            % TODO: It maybe worth doing some form of bubbling up of
-            % validation for non-dependant variables maybe by way of
-            % informing outputs.
-
-            % TODO: Try catch Raise
-            obj.action_items(1).validate(input);
-        end
-
-        function debug(obj)
-            % TODO : Unsure of what part debug should play yet, it may need to 
-            % stay as an abstract function for now
-            pass
-        end
-
-    end % methods
-
-    methods (Access = protected)
-        function [input_vars, output_vars] = generate_input(obj)
-            % ==================================================================
-            %  The following loops through the internal variable inputs and
-            %  output variables to create the vars so ensure at a high
-            %  level that action list is valid.
-            % ==================================================================
-
-            input_vars = [];
-            output_vars = [];
-
-            for action_item = obj.action_items
-                input_vars = horzcat(input_vars, action_item.input_vars);
-                output_vars = horzcat(output_vars, action_item.output_vars);
-
-                keyboard
-            end
-
-
-        end
 
     end % methods
 

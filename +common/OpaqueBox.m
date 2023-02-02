@@ -21,7 +21,7 @@ classdef OpaqueBox < handle
         %  fashion. The input variables are used to validate inputs.
         %  The format of the input variables are <"Name", "ClassType">.
         % ======================================================================
-        input_vars (2, :) string
+        input_vars (:, 2) string
 
         % ======================================================================
         %  Highly Complicated systems will inevitably be linked in some
@@ -30,7 +30,7 @@ classdef OpaqueBox < handle
         %  <"VariableName", "ClassType">.
         %  i.e, <"MyNumberField", "double">
         % ======================================================================
-        output_vars (2, :) string
+        output_vars (:, 2) string
 
     end % properties
 
@@ -57,28 +57,29 @@ classdef OpaqueBox < handle
             % ==================================================================
             % Run is the function that runs the system.
             % ==================================================================
-            obj.validate(work_struct);
+            obj.validate(work_struct, obj.input_vars);
             work_struct = obj.apply(work_struct);
+            obj.validate(work_struct, obj.output_vars);
         end
 
     end
 
     %% Inherited Methods
-    methods (Access = protected)
-        function validate(obj, work_struct)
+    methods (Static)
+        function validate(work_struct, var_list)
             % ==================================================================
             % Validate ensures that box contains necessary components to run
             % ==================================================================
 
-            diff_fields = setdiff(obj.input_vars(1, :), fieldnames(work_struct));
+            diff_fields = setdiff(var_list(:, 1), fieldnames(work_struct));
 
             if ~isempty(diff_fields)
-                error("Missing Fields in %s: %s", dbstack(1).name, diff_fields)
+                error("Missing Fields in %s: %s\n", dbstack(1).name, diff_fields)
             end % if
 
-            for input_var = obj.input_vars
+            for input_var = var_list.'
                 if ~isa(work_struct.(input_var(1)), input_var(2))
-                    error("Field %s is not a %s", input_var(1), input_var(2));
+                    error("Field %s is not a %s\n", input_var(1), input_var(2));
 
                 end % if
 
