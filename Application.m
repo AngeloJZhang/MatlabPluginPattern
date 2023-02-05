@@ -8,7 +8,7 @@ classdef Application < handle
             
             [imports, functions] = core.ConfigLoader.load(path_to_config);
             importer = core.Importer(imports);
-
+            
         end % function
 
     end % methods

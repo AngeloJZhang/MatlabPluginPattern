@@ -31,14 +31,11 @@
     # considered if multiple layers of nesting is required.
     #
     "functions": {
-        "funct1": [
-            "subfunct1",
-            {
-                "subfunct2": [
-                    "subfunct2a",
-                    "subfunct2b"
-                ]
-            }
+        "testEngineOne": [
+            "testOpaqueOne"
+        ],
+        "testEngineTwo": [
+            "testOpaqueTwo"
         ]
     }
 }

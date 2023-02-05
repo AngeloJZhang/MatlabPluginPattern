@@ -4,12 +4,63 @@ classdef test_app < matlab.unittest.TestCase
     %  This test class should be run from the top-level folder.
     % ==========================================================================
     methods(TestClassSetup)
-        % Shared setup for the entire test class
-    end
+        function setupOnce(testCase)
+            % Shared setup for the entire test class
 
-    methods(TestMethodSetup)
-        % Setup for each test
-    end
+            dir_obj = dir("+test/testlogic");
+            file_names = {dir_obj.name};
+
+            % Ignore directories. There should be no dirs in test or logic
+            dir_obj = dir_obj(~[dir_obj.isdir]);
+
+            % Go through the test directory and move things into the logic
+            % folder. This maybe automated better with MATLAB's new fixture
+            % system.
+            for test_file = dir_obj.'
+
+                % Get the path and copy the file over to "+logic"
+                file_path = fullfile(test_file.folder, test_file.name);
+                copyfile(file_path, fullfile("+logic", test_file.name));
+
+            end % for
+
+        end % function
+
+    end % method
+
+    methods(TestClassTeardown)
+        function tearDownOnce(testCase)
+            % Shared teardown for the entire test class
+
+            % Get the files in the two logic folders
+            test_dir_obj = dir("+test/testlogic");
+            logic_dir_obj = dir("+logic");
+            
+            % Get the names of the file from the test logic folder
+            file_names = {test_dir_obj.name};
+            file_names = file_names(~[test_dir_obj.isdir]);
+
+            % Ignore directories. There should be no dirs in test or logic.
+            logic_dir_obj = logic_dir_obj(~[logic_dir_obj.isdir]);
+
+            % Loop through the files names
+            for test_file = logic_dir_obj.'
+
+                % If the names files from within the test logic folder
+                % matches the names of the items with in the logic folder.
+                % Remove those files. This can be further refines to maybe
+                % rename all folders for test or generate new folders for
+                % test and it should be done in the off chance filenames
+                % conflict with the test file names.
+                if any(contains(file_names, test_file.name))
+                    delete(fullfile("+logic", test_file.name));
+                end % if
+
+            end % for
+
+        end % function
+
+    end % method
 
     methods(Test)
         % Test methods
@@ -21,16 +72,13 @@ classdef test_app < matlab.unittest.TestCase
             [test_imports, test_functions] = core.ConfigLoader.load("+test/test_config.json");
 
             % This is a hard coded true config
-            imports.testclass = '+test/@testclass';
-            functions.funct1 = cell(2, 1);
-            functions.funct1{1} = 'subfunct1';
-            functions.funct1{2}.subfunct2 = cell(2, 1);
-            functions.funct1{2}.subfunct2{1} = 'subfunct2a';
-            functions.funct1{2}.subfunct2{2} = 'subfunct2b';
+            imports.testclass = '+test\testclass';
+            functions.testEngineOne = {'testOpaqueOne'};
+            functions.testEngineTwo = {'testOpaqueTwo'};
 
             % Verify the two outputs
-            testCase.verifyTrue(isequal(test_imports, imports));
-            testCase.verifyTrue(isequal(test_functions, functions));
+            testCase.assertEqual(test_imports, imports);
+            testCase.assertEqual(test_functions, functions);
 
         end % function
 
@@ -80,9 +128,8 @@ classdef test_app < matlab.unittest.TestCase
             % ==================================================================
             %  This function tests the running of OpaqueBoxes
             % ==================================================================
-            [imports, ~] = core.ConfigLoader.load("+test/test_config.json");
-            importer = core.Importer(imports);
-            import(importer.import("testclass"));
+
+            import logic.*
 
             % Construct the boxes
             test_box_one = testOpaqueOne();
@@ -128,21 +175,65 @@ classdef test_app < matlab.unittest.TestCase
 
         end % function
 
-        function RunUtilEngine(testCase)
-            [imports, ~] = core.ConfigLoader.load("+test/test_config.json");
-            importer = core.Importer(imports);
-            import(importer.import("testclass"));
+        function RunUtilBox(testCase)
+            % ==================================================================
+            %  This function tests the UtilEngine Runs properly
+            % ==================================================================
+            import logic.*
 
-            % Data Object
+            % Create Data Obj
             work_struct = struct();
 
             % Construct the boxes
             test_box_one = testOpaqueOne();
             test_box_two = testOpaqueTwo();
+
+            % Make the truth
+            true_work_struct.testfieldA = 1;
+            true_work_struct.testfieldB = "test";
+            true_work_struct.testfieldC = 2;
+
+            % Set the data
             engine = common.UtilBox(action_items={test_box_one, test_box_two});
-            engine.run(work_struct)
-        end
 
-    end
+            % Run the data
+            work_struct = engine.run(work_struct);
 
-end
+            % Verify both are the same
+            testCase.assertEqual(true_work_struct, work_struct);
+
+        end % function
+
+        function LoadFunctions(testCase)
+            % ==================================================================
+            %  The function loads in the values from the configuration to
+            %  ensure that we have configuration processing chains.
+            % ==================================================================
+            [~, functions] = core.ConfigLoader.load("+test/test_config.json");
+            utilbox_list = core.FunctionLoader.load(functions);
+
+            % Create Data Obj
+            work_struct = struct();
+
+            % Run the First Box
+            work_struct = utilbox_list{1}.run(work_struct);
+
+            % Create True Test
+            true_work_struct.testfieldA = 1;
+            true_work_struct.testfieldB = "test";
+
+            % Check Valid Struct
+            testCase.assertEqual(true_work_struct, work_struct);
+
+            % Run the Second Box
+            work_struct = utilbox_list{2}.run(work_struct);
+
+            % Check Valid Struct
+            true_work_struct.testfieldC = 2;
+            testCase.assertEqual(true_work_struct, work_struct);
+
+        end % function
+
+    end % method
+
+end % classdef
