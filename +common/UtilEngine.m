@@ -88,6 +88,89 @@ classdef UtilEngine < handle
 
         end % function
 
+        function num_actions = length(obj)
+            % ==================================================================
+            %  This function finds the total action length of the
+            %  action list by going through the action items list.
+            % ==================================================================
+            arguments
+
+                % Base Object
+                obj (1, 1) common.UtilEngine
+
+            end % arguments
+
+            num_actions = 0;
+            for action = obj.action_items
+
+                % If the action is an Engine then have it perform this
+                % length function as well.
+                if isa(action{:}, "common.UtilEngine")
+                    num_actions = num_actions + action{:}.length();
+                    continue;
+
+                end % if
+
+                % If the action is not an Engine then add one and go to the
+                % next action in the list.
+                num_actions = num_actions + 1;
+
+            end % for
+
+        end % function
+
+        function box_replace(obj, box_handle)
+            % ==================================================================
+            %  This function find the action that is the direct parent
+            %  class of the box handle (not grand-parent etc) and replaces
+            %  it with the child.
+            % ==================================================================
+            
+            
+            parents = superclasses(box_handle);
+
+            % There are no parents for this handle therefore, do nothing.
+            if isempty(parents)
+                return
+            end % if
+
+            % TODO : Change this to handle multiple inheritance.
+            parent_name = parents{1};
+
+            % TODO : It maybe worth keeping a list of parents on creation
+            % of this object for quicker sorting and search.
+            % If the parent is just a base handle then don't bother with
+            % loading.
+            if isa(parent_name, "handle")
+                return
+            end % if
+
+            for action_iter = length(obj.action_items)
+
+                action = obj.action_items(action_iter);
+
+                % If the class is a UtilEngine then call this same
+                % function to replace blocks.
+                if isa(action{:}, "common.UtilEngine")
+
+                    action{:}.box_replace(box_handle);
+
+                end % if
+
+                % Check the action handle and see if it can be removed. The
+                % following is purposefully done instead of using "isa" so
+                % that only the first parent is checked.
+                if strcmp(class(action{:}), parent_name)
+
+                    % Set the action into the action_items list;
+                    obj.action_items{action_iter} = box_handle;
+
+                end % if
+                
+            end % for
+
+        end % function
+
     end % methods
 
 end % classdef

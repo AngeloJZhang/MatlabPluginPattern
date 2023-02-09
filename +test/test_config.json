@@ -37,5 +37,12 @@
         "testEngineTwo": [
             "testOpaqueTwo"
         ]
-    }
+    },
+    #
+    # This section shows how plugins are pulled into the Application. The plugins
+    # are loaded in by the order written in this variable.
+    #
+    "plugins" : [
+        "testplugin"
+        ]
 }

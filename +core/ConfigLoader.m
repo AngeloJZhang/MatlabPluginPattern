@@ -17,12 +17,12 @@ classdef ConfigLoader < handle
 
         % The following variable contains required fields for the
         % configuration that is loaded.
-        REQUIRED_FIELDS = ["imports", "functions"]
+        REQUIRED_FIELDS = ["imports", "functions", "plugins"]
 
     end % properties
 
     methods (Static)
-        function [imports, functions] = load(path_to_config)
+        function [imports, functions, plugins] = load(path_to_config)
             % ==================================================================
             %  This function is static and loads in the config. It is a class
             %  because while there is likely no need for multiple configuraitons.
@@ -62,6 +62,7 @@ classdef ConfigLoader < handle
             % The following data is parsed in their individual classes
             imports = config.imports;
             functions = config.functions;
+            plugins = string(config.plugins);
             
         end % function
 

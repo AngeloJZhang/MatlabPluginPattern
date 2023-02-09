@@ -55,14 +55,15 @@ classdef OpaqueBox < handle
     methods (Access = public)
         function work_struct = run(obj, work_struct)
             % ==================================================================
-            % Run is the function that runs the system.
+            %  Run is the function that runs the system.
             % ==================================================================
             obj.validate(work_struct, obj.input_vars);
             work_struct = obj.apply(work_struct);
             obj.validate(work_struct, obj.output_vars);
-        end
+            
+        end % function
 
-    end
+    end % methods
 
     %% Inherited Methods
     methods (Static)

@@ -1,16 +1,16 @@
 % ==============================================================================
-%  The Importer class manages imports to the data and handles the pathing
+%  The ImportLib class manages imports to the data and handles the pathing
 %  to said directories using symlinks to the lib folder. This allows for
 %  a more proper pathing in matlab without the need to add every folder in
 %  a share coding space. In addition, it allows for import commands such
 %  that paths do not persist between function calls. This class is a
 %  singleton class.
 % ==============================================================================
-classdef Importer < handle
+classdef ImportLib < handle
 
     % ==========================================================================
     %  Within the Application, the import allows for a very pythonic way of
-    %  linking directories. By using the importer, in conjuction with the
+    %  linking directories. By using the ImportLib, in conjuction with the
     %  pathguard, we create something simpler to the import command such
     %  that, multiple functions with the same name should never be an
     %  issue as they are seperate by both namespace and pathing.
@@ -34,7 +34,7 @@ classdef Importer < handle
     end % properties
 
     methods (Access = public)
-        function obj = Importer(ref_struct)
+        function obj = ImportLib(ref_struct, plugins_list)
             % ==================================================================
             %  Constructor
             % ==================================================================
@@ -43,7 +43,13 @@ classdef Importer < handle
                 % The reference_struct is a <key, value> pair containing the
                 % reference name of the library and the path to the
                 % library. This is received from the ConfigLoader.
-                ref_struct (1, 1) struct = struct()
+                ref_struct (1, 1) struct = struct();
+
+                % The plugins list is a list of plugin names that are to be
+                % incorporated into the system. These directories should
+                % all exist within the +plugin folder.
+                plugins_list (1, :) string = [];
+
 
             end % arguments
 
@@ -62,14 +68,32 @@ classdef Importer < handle
 
             end % for
 
-            % Set the values into the map
-            values = string(struct2cell(ref_struct));
-            obj.ref_map = containers.Map(fieldnames(ref_struct), values);
+            % Create the import paths for plugins
+            for plugin = plugins_list
 
-            for key = string(obj.ref_map.keys)
+                % The path to the plugins library is taken from the PluginLoader.
+                plugin_path = fullfile(core.PluginLoader.PLUGIN_DIR, plugin);
+
+                % Verify that the plugin exists.
+                if ~exist(plugin_path, "dir")
+                    error("Plugin does not exist in plugins directory: %s", plugin);
+                end % if
+
+            end % for
+
+            % Set the values into the map
+            plugin_keys = plugins_list;
+            import_keys = string(fieldnames(ref_struct));
+            plugin_paths = fullfile(core.PluginLoader.PLUGIN_DIR, plugins_list);
+            import_paths = string(struct2cell(ref_struct));
+
+            obj.ref_map = containers.Map([plugin_keys import_keys], [plugin_paths import_paths]);
+
+            % Create a Symlink for all the Imports
+            for key = import_keys
                 link_source = obj.ref_map(key);
-                link_dest = fullfile(core.Importer.IMPORT_SYM_DIR, key);
-                core.Importer.symlink(link_dest, link_source);
+                link_dest = fullfile(core.ImportLib.IMPORT_SYM_DIR, key);
+                core.ImportLib.symlink(link_dest, link_source);
 
             end % for
 
@@ -80,10 +104,10 @@ classdef Importer < handle
 
         end % function
 
-        function import_name = import(obj, ref_key)
+        function import_name = subsref(obj, ref_struct)
             % ==================================================================
             %  This function sets the paths of the library that
-            %  that user wants with the importer object. It assigns a guard
+            %  that user wants with the ImportLib object. It assigns a guard
             %  within the scope of the function so that it automatically
             %  clears when the function ends.
             %
@@ -92,24 +116,40 @@ classdef Importer < handle
             %  an import point. When, this bug has been fixed, a dynamic
             %  import point should be placed.
             %
+            %  While this class can use the mix in for dot indexing it does
+            %  not because there is no assignment of values.
+            %
             %  https://www.mathworks.com/matlabcentral/answers/1877397-dynamic-import-with-evalin-not-possible
+            %
+            %  Usage : import(<ImportLib Obj>.<Library Name>)
+            %
+            %  Example : import(lib.testclass) -> this sets the path and
+            %                                     imports testclass and
+            %                                     gets cleared at funct end
             % ==================================================================
             arguments
                 
                 % The Import Object itself
-                obj (1, 1) core.Importer
+                obj (1, 1) core.ImportLib
 
                 % The Reference Key that the user imports
-                ref_key (1, 1) string
+                ref_struct (1, 1) struct
 
             end % arguments
+
+            ref_key = string(ref_struct.subs);
+
+            % Perform Validation on the Subscript
+            if length(ref_key) > 1
+                error("This class does not support multiple subscripts.")
+            end
 
             % Validate the key
             if ~any(contains(obj.ref_map.keys, ref_key))
                 error("ref_key does not exist in object map: %s", ref_key);
             end
 
-            import_path = fullfile(core.Importer.IMPORT_SYM_DIR, ref_key);
+            import_path = obj.ref_map(ref_key);
             pathguard_obj = core.PathGuard(import_path);
 
             % This evaluates in the caller the PathGuard and the Import
@@ -130,7 +170,7 @@ classdef Importer < handle
             % ==================================================================
 
             % Clear out the lib directory
-            for link = dir(core.Importer.IMPORT_SYM_DIR).'
+            for link = dir(core.ImportLib.IMPORT_SYM_DIR).'
 
                 % If dir are pointers to parent directories ignore them
                 if contains(link.name, ".")
@@ -150,8 +190,8 @@ classdef Importer < handle
         function status = symlink(link_dest, link_source)
             % ==================================================================
             %  This function create a symlink by calling system commands.
-            %  The symlinks generated by the importer are mapped to the lib
-            %  directory and are deleted upon the removal of the importer.
+            %  The symlinks generated by the ImportLib are mapped to the lib
+            %  directory and are deleted upon the removal of the ImportLib.
             % ==================================================================
             arguments
 

@@ -69,16 +69,18 @@ classdef test_app < matlab.unittest.TestCase
             % ==================================================================
             %  This function tests loading the data.
             % ==================================================================
-            [test_imports, test_functions] = core.ConfigLoader.load("+test/test_config.json");
+            [test_imports, test_functions, test_plugins] = core.ConfigLoader.load("+test/test_config.json");
 
             % This is a hard coded true config
             imports.testclass = '+test\testclass';
             functions.testEngineOne = {'testOpaqueOne'};
             functions.testEngineTwo = {'testOpaqueTwo'};
+            plugins = "testplugin";
 
             % Verify the two outputs
             testCase.assertEqual(test_imports, imports);
             testCase.assertEqual(test_functions, functions);
+            testCase.assertEqual(test_plugins, plugins);
 
         end % function
 
@@ -86,11 +88,11 @@ classdef test_app < matlab.unittest.TestCase
             % ==================================================================
             %  This function tests the importing of files
             % ==================================================================
-            [imports, ~] = core.ConfigLoader.load("+test/test_config.json");
-            importer = core.Importer(imports);
+            [imports, ~, plugins] = core.ConfigLoader.load("+test/test_config.json");
+            lib = core.ImportLib(imports, plugins);
 
             % Test Importer Constructor / Test Symlink Dirs Exist
-            path_to_symlink = fullfile(importer.IMPORT_SYM_DIR, "testclass");
+            path_to_symlink = fullfile(core.ImportLib.IMPORT_SYM_DIR, "testclass");
             testCase.verifyTrue(exist(path_to_symlink, "dir") == 7);
 
             % Copy the env_paths for a later check
@@ -101,7 +103,19 @@ classdef test_app < matlab.unittest.TestCase
 
             % Work around for ideal case
             % https://www.mathworks.com/matlabcentral/answers/1877397-dynamic-import-with-evalin-not-possible
-            import(importer.import("testclass"));
+            import(lib.testclass);
+
+            % Test Failure
+            try
+                % Attempt to load in randomness
+                lib.abcd
+
+                % If it worked then it failed
+                testCase.verifyFalse();
+            catch
+                % Do nothing! This is good and expected
+
+            end % try catch
 
             % Test Pathguard creation
             testCase.verifyTrue(exist("testclass_path_guard", "var") == 1);
@@ -119,7 +133,7 @@ classdef test_app < matlab.unittest.TestCase
             testCase.verifyTrue(length(setdiff(new_env_paths, env_paths)) == 1);
 
             % Test Importer Destructor
-            importer.delete();
+            delete(lib);
             testCase.verifyTrue(exist(path_to_symlink, "dir") == 0);
 
         end % function
@@ -202,14 +216,22 @@ classdef test_app < matlab.unittest.TestCase
             % Verify both are the same
             testCase.assertEqual(true_work_struct, work_struct);
 
+            % Verify the length function
+            testCase.assertEqual(engine.length(), 2);
+
+            % Verify the length works in case of a wrapper engine
+            wrapper_engine = common.UtilBox(action_items={engine, test_box_one});
+
+            testCase.assertEqual(wrapper_engine.length(), 3);
+
         end % function
 
         function LoadFunctions(testCase)
             % ==================================================================
-            %  The function loads in the values from the configuration to
+            %  This function loads in the values from the configuration to
             %  ensure that we have configuration processing chains.
             % ==================================================================
-            [~, functions] = core.ConfigLoader.load("+test/test_config.json");
+            [~, functions, ~] = core.ConfigLoader.load("+test/test_config.json");
             utilbox_list = core.FunctionLoader.load(functions);
 
             % Create Data Obj
@@ -230,6 +252,39 @@ classdef test_app < matlab.unittest.TestCase
 
             % Check Valid Struct
             true_work_struct.testfieldC = 2;
+            testCase.assertEqual(true_work_struct, work_struct);
+
+        end % function
+
+        function LoadPlugins(testCase)
+            % ==================================================================
+            %  This function loads in the plugins from the libraries and
+            %  replaces the actions in the items list with it's children.
+            % ==================================================================
+            [imports, functions, plugins] = core.ConfigLoader.load("+test/test_config.json");
+            lib = core.ImportLib(imports, plugins);
+            utilbox_list = core.FunctionLoader.load(functions);
+            
+            % import the test plugin for this class
+            import(lib.testplugin)
+
+            % Load in the plugins
+            % TODO: Test loading failures.
+            core.PluginLoader.load(plugins, utilbox_list);
+
+            % Spin up a new engine
+            engine = common.UtilBox(action_items=utilbox_list);
+
+            % Run the workspace through the new engine
+            work_struct = struct();
+            work_struct = engine.run(work_struct);
+
+            % Create True Test
+            true_work_struct.testfieldA = 2;
+            true_work_struct.testfieldB = "test_inherited";
+            true_work_struct.testfieldC = 3;
+
+            % Validate the new function was loaded successfully and ran.
             testCase.assertEqual(true_work_struct, work_struct);
 
         end % function
