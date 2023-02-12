@@ -19,7 +19,9 @@ The following section describes vocabulary used with in the repository and the i
 
 ## Core Idea
 `common.OpaqueBox` - This class defines the basic building block of the system.
+
 `common.UtilEngine` - This class contains multiple `OpaqueBox` and runs them in sequence in it's list.
+
 `common.UtilBox` - This class inherits both `OpaqueBox` and `UtilEngine` to act as a larger function block.
  
 ```mermaid 
