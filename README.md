@@ -56,7 +56,7 @@ classDiagram
 	}
 	UtilBox --|> OpaqueBox
 	UtilBox --|> UtilEngine
-	UtilEngine "1" --* "0...*" OpaqueBox
+	UtilEngine "1" *-- "0...*" OpaqueBox
 
 	class Application{
 	
@@ -78,9 +78,9 @@ classDiagram
 	+subsref()
 	}
 
-	Application --* PluginLoader
-	Application --* FunctionLoader
-	Application --* ImportLib
+	Application *-- PluginLoader
+	Application *-- FunctionLoader
+	Application *-- ImportLib
 	
 ```
 
