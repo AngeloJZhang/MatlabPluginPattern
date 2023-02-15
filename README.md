@@ -100,3 +100,7 @@ TODO: Document Usuage.
 
 # Testing
 TODO : Document Testing.
+
+Software TODO
+Remove the TestPlugin, load it in and remove it on test.
+It might be worth making a loader function honestly.

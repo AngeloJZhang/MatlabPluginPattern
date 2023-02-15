@@ -18,8 +18,9 @@ classdef FunctionLoader < handle
             arguments
 
                 % This variable contains the information for the function lists 
-                funct_config (1, 1) struct
-            end
+                funct_config (1, 1) struct;
+                
+            end % arguments
             
             % The function Loader always takes from the logic section first
             % before looking at other sections
